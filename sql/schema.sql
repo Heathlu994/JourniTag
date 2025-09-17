@@ -1,0 +1,3 @@
+CREATE TABLE cities (
+    city VARCHAR(20) NOT NULL PRIMARY KEY, 
+);

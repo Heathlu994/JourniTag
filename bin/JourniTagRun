@@ -1,0 +1,12 @@
+#!/bin/bash
+
+DB_FILE="sql/greetings.db"
+
+if [ ! -f "$DB_FILE" ]; then
+    echo "Error: can't find database $DB_FILE"
+    echo "Try: ./bin/db.sh create"
+    exit 1
+fi
+
+echo "+ Starting Flask API..."
+flask --app app --debug run --host 0.0.0.0 --port 8000

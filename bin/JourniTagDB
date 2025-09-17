@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# Stop on errors
+# https://vaneyckt.io/posts/safer_bash_scripts_with_set_euxo_pipefail/
+set -Eeuo pipefail
+
+# Database file
+DB_FILE="sql/greetings.db"
+
+# Sanity check command line options
+usage() {
+  echo "Usage: $0 (create|destroy|reset)"
+}
+
+if [ $# -ne 1 ]; then
+  usage
+  exit 1
+fi
+
+# Parse argument.  $1 is the first argument
+case $1 in
+  "create")
+    if [ -f "$DB_FILE" ]; then
+        echo "Error: database already exists"
+        exit 1
+    fi
+    echo "+ Creating database..."
+    sqlite3 "$DB_FILE" < sql/schema.sql > /dev/null
+    sqlite3 "$DB_FILE" < sql/data.sql > /dev/null
+    echo "+ Database created successfully."
+    ;;
+
+
+  "destroy")
+    rm -f "$DB_FILE"
+    echo "+ Database destroyed."
+    ;;
+
+
+  "reset")
+    rm -f "$DB_FILE"
+    echo "+ Database reset."
+    sqlite3 "$DB_FILE" < sql/schema.sql > /dev/null
+    sqlite3 "$DB_FILE" < sql/data.sql > /dev/null
+    echo "+ Database reset complete."
+    ;;
+
+  *)
+    usage
+    exit 1
+    ;;
+esac
