@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JourniTag - Photo Upload Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px dashed #ddd;
+            border-radius: 5px;
+            background: #fafafa;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .photo-item {
+            position: relative;
+        }
+        .photo-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .photo-item p {
+            margin: 5px 0;
+            font-size: 12px;
+            color: #666;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📸 JourniTag Photo Upload Test</h1>
+        
+        <div class="info">
+            <strong>Note:</strong> Make sure your Flask server is running on port 8000
+        </div>
+        
+        <form id="uploadForm">
+            <div class="form-group">
+                <label for="trip_id">Trip ID:</label>
+                <input type="number" id="trip_id" name="trip_id" value="1" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="user_id">User ID:</label>
+                <input type="number" id="user_id" name="user_id" value="1" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="files">Select Photos (with GPS data):</label>
+                <input type="file" id="files" name="files" multiple accept="image/*" required>
+                <small style="color: #666;">Select multiple iPhone photos with location data</small>
+            </div>
+            
+            <button type="submit" id="submitBtn">Upload Photos</button>
+        </form>
+        
+        <div id="result"></div>
+    </div>
+    
+    <script>
+        const form = document.getElementById('uploadForm');
+        const resultDiv = document.getElementById('result');
+        const submitBtn = document.getElementById('submitBtn');
+        const filesInput = document.getElementById('files');
+        
+        // Show selected file count
+        filesInput.addEventListener('change', (e) => {
+            const count = e.target.files.length;
+            if (count > 0) {
+                submitBtn.textContent = `Upload ${count} Photo${count > 1 ? 's' : ''}`;
+            } else {
+                submitBtn.textContent = 'Upload Photos';
+            }
+        });
+        
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            const tripId = document.getElementById('trip_id').value;
+            const userId = document.getElementById('user_id').value;
+            const files = filesInput.files;
+            
+            if (files.length === 0) {
+                resultDiv.innerHTML = '<div class="error">Please select at least one photo</div>';
+                return;
+            }
+            
+            formData.append('trip_id', tripId);
+            formData.append('user_id', userId);
+            
+            for (let file of files) {
+                formData.append('files', file);
+            }
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            resultDiv.innerHTML = '<div class="loading">⏳ Uploading and processing photos...</div>';
+            
+            try {
+                const response = await fetch('http://localhost:8000/api/photos/batch-upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h3>✅ Success!</h3>
+                            <p>${data.message}</p>
+                            <p><strong>Photos uploaded:</strong> ${data.photos_uploaded}</p>
+                        </div>
+                        <div class="photo-grid">
+                            ${data.photos.map(photo => `
+                                <div class="photo-item">
+                                    <img src="http://localhost:8000${photo.file_url}" alt="${photo.original_filename}">
+                                    <p><strong>Location ID:</strong> ${photo.location_id}</p>
+                                    <p><strong>Coords:</strong> ${photo.y.toFixed(4)}, ${photo.x.toFixed(4)}</p>
+                                    ${photo.is_cover_photo ? '<p>⭐ Cover Photo</p>' : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h3>❌ Error</h3>
+                            <p>${data.error}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Upload Failed</h3>
+                        <p>${error.message}</p>
+                        <p><small>Make sure your Flask server is running on port 8000</small></p>
+                    </div>
+                `;
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Upload Photos';
+            }
+        });
+    </script>
+</body>
+</html>
