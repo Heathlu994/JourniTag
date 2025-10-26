@@ -18,14 +18,10 @@ interface TripDetailViewProps {
 }
 
 export function TripDetailView({ trip, onBack, onLocationClick, locations }: TripDetailViewProps) {
-  // Merge runtime locations with mocks so adding a new location doesn't hide existing ones
-  const runtime = locations ?? []
-  const mergedById: Record<string, Location> = {}
-  for (const loc of [...mockLocations, ...runtime]) {
-    mergedById[loc.id] = { ...(mergedById[loc.id] || {} as Location), ...loc }
-  }
-  const all = Object.values(mergedById)
-  const tripLocations = all.filter((loc) => loc.trip_id === trip.id)
+  // Prefer locations from runtime state for this trip; only fall back to mock if none exist
+  const stateForTrip = (locations ?? []).filter((loc) => loc.trip_id === trip.id)
+  const mockForTrip = mockLocations.filter((loc) => loc.trip_id === trip.id)
+  const tripLocations = stateForTrip.length > 0 ? stateForTrip : mockForTrip
 
   const formatDateRange = (start: string, end: string) => {
     const startDate = new Date(start)

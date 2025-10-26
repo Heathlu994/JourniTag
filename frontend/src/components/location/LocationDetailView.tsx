@@ -144,11 +144,11 @@ export function LocationDetailView({
             </div>
 
             {/* Vibe Tags */}
-            {location.tags.length > 0 && (
+            {(location.tags && location.tags.length > 0) && (
               <div className="space-y-2">
                 <Label>Vibe</Label>
                 <div className="flex flex-wrap gap-2">
-                  {location.tags.map((tag) => (
+                  {(location.tags || []).map((tag) => (
                     <span
                       key={tag}
                       className="px-3 py-1 bg-muted rounded-full text-sm"

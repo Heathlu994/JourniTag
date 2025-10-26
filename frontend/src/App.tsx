@@ -169,9 +169,8 @@ function App() {
       // merge locations (preserve existing ones under the trip)
       setLocations(prev => {
         const byId: Record<string, Location> = {}
-        for (const l of [...prev, ...newLocations]) {
-          byId[l.id] = { ...(byId[l.id] || {} as Location), ...l }
-        }
+        for (const l of prev) byId[l.id] = l
+        for (const l of newLocations) byId[l.id] = { ...(byId[l.id] || {} as Location), ...l }
         return Object.values(byId)
       })
 
