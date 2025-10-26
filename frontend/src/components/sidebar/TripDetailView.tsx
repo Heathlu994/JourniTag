@@ -18,10 +18,13 @@ interface TripDetailViewProps {
 }
 
 export function TripDetailView({ trip, onBack, onLocationClick, locations }: TripDetailViewProps) {
-  // Prefer locations from runtime state for this trip; only fall back to mock if none exist
+  // Merge runtime and mock locations for this trip (runtime overrides mock)
   const stateForTrip = (locations ?? []).filter((loc) => loc.trip_id === trip.id)
   const mockForTrip = mockLocations.filter((loc) => loc.trip_id === trip.id)
-  const tripLocations = stateForTrip.length > 0 ? stateForTrip : mockForTrip
+  const byId: Record<string, Location> = {}
+  for (const l of mockForTrip) byId[l.id] = l
+  for (const l of stateForTrip) byId[l.id] = { ...(byId[l.id] || {} as Location), ...l }
+  const tripLocations = Object.values(byId)
 
   const formatDateRange = (start: string, end: string) => {
     const startDate = new Date(start)
@@ -137,9 +140,9 @@ function LocationCard({ location, onClick }: LocationCardProps) {
           </p>
 
           {/* Tags */}
-          {location.tags.length > 0 && (
+          {(location.tags?.length ?? 0) > 0 && (
             <div className="flex flex-wrap gap-1 mt-2">
-              {location.tags.slice(0, 2).map((tag) => (
+              {(location.tags ?? []).slice(0, 2).map((tag) => (
                 <span
                   key={tag}
                   className="px-2 py-0.5 bg-muted rounded-full text-xs"
@@ -147,9 +150,9 @@ function LocationCard({ location, onClick }: LocationCardProps) {
                   {tag}
                 </span>
               ))}
-              {location.tags.length > 2 && (
+              {(location.tags?.length ?? 0) > 2 && (
                 <span className="px-2 py-0.5 bg-muted rounded-full text-xs">
-                  +{location.tags.length - 2}
+                  +{(location.tags?.length ?? 0) - 2}
                 </span>
               )}
             </div>
@@ -159,7 +162,7 @@ function LocationCard({ location, onClick }: LocationCardProps) {
           <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
             <div className="flex items-center gap-1">
               <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-              <span>{location.rating.toFixed(1)}</span>
+              <span>{Number(location.rating ?? 0).toFixed(1)}</span>
             </div>
             {location.time_needed && (
               <div className="flex items-center gap-1">

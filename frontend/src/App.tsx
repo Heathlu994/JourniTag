@@ -72,8 +72,13 @@ function App() {
     setSelectedTrip(trip)
     setSidebarView('trip-detail')
 
-    // Calculate bounds for trip locations and focus map
-    const tripLocations = mockLocations.filter((loc) => loc.trip_id === trip.id)
+    // Calculate bounds for trip locations and focus map (merge runtime + mock)
+    const runtimeTripLocs = locations.filter((loc) => loc.trip_id === trip.id)
+    const mockTripLocs = mockLocations.filter((loc) => loc.trip_id === trip.id)
+    const byId: Record<string, Location> = {}
+    for (const l of mockTripLocs) byId[l.id] = l
+    for (const l of runtimeTripLocs) byId[l.id] = { ...(byId[l.id] || {} as Location), ...l }
+    const tripLocations = Object.values(byId)
     const bounds = calculateTripBounds(tripLocations)
 
     if (bounds) {
@@ -98,10 +103,11 @@ function App() {
         const fetched = await locationAPI.getLocationById(location.id)
         enriched = { ...fetched.location, photos: fetched.photos }
 
-        // merge back into locations state so Trip views show counts
+        // merge back into locations state so Trip views show counts and persist others
         setLocations(prev => {
           const byId: Record<string, Location> = {}
-          for (const l of [...prev, enriched]) byId[l.id] = { ...(byId[l.id] || {} as Location), ...l }
+          for (const l of prev) byId[l.id] = l
+          byId[enriched.id] = { ...(byId[enriched.id] || {} as Location), ...enriched }
           return Object.values(byId)
         })
       } catch (e) {
