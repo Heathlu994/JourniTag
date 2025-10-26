@@ -9,4 +9,4 @@ app.config.from_object('app.config')
 from app import db
 db.init_app(app)
 
-from app import routes
+from app import route

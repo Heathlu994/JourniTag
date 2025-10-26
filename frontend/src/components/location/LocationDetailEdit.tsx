@@ -30,11 +30,19 @@ export function LocationDetailEdit({
   onCancel,
   onSave,
 }: LocationDetailEditProps) {
-  const [editedLocation, setEditedLocation] = useState<Location>(location)
+  const normalizeLocation = (loc: Location): Location => ({
+    ...loc,
+    tags: loc.tags || [],
+    rating: loc.rating ?? 0,
+    cost_level: loc.cost_level || 'Free',
+    notes: loc.notes || '',
+  })
+
+  const [editedLocation, setEditedLocation] = useState<Location>(normalizeLocation(location))
 
   // Update local state when location prop changes
   useEffect(() => {
-    setEditedLocation(location)
+    setEditedLocation(normalizeLocation(location))
   }, [location])
 
   const updateLocation = (updates: Partial<Location>) => {
@@ -117,9 +125,10 @@ export function LocationDetailEdit({
                 availableTags={Array.from(TAG_OPTIONS)}
                 selectedTags={editedLocation.tags}
                 onTagToggle={(tag) => {
-                  const newTags = editedLocation.tags.includes(tag)
-                    ? editedLocation.tags.filter((t) => t !== tag)
-                    : [...editedLocation.tags, tag]
+                  const current = editedLocation.tags || []
+                  const newTags = current.includes(tag)
+                    ? current.filter((t) => t !== tag)
+                    : [...current, tag]
                   updateLocation({ tags: newTags })
                 }}
               />

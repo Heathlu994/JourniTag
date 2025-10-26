@@ -7,13 +7,13 @@ import { Star } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface RatingStarsProps {
-  value: number
+  value?: number
   onChange?: (value: number) => void
   readonly?: boolean
   size?: 'sm' | 'md' | 'lg'
 }
 
-export function RatingStars({ value, onChange, readonly = false, size = 'md' }: RatingStarsProps) {
+export function RatingStars({ value = 0, onChange, readonly = false, size = 'md' }: RatingStarsProps) {
   const sizeClasses = {
     sm: 'w-4 h-4',
     md: 'w-5 h-5',
@@ -52,7 +52,7 @@ export function RatingStars({ value, onChange, readonly = false, size = 'md' }: 
         </button>
       ))}
       <span className="ml-2 text-sm font-medium text-muted-foreground">
-        {value.toFixed(1)}
+        {Number(value || 0).toFixed(1)}
       </span>
     </div>
   )
