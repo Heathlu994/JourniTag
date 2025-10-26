@@ -163,6 +163,10 @@ export interface UploadState {
     exifData?: ExifData
   }[]
   currentStep: "select" | "locate" | "details" | "uploading"
+  uploadResults?: {
+    trip?: Trip
+    locations?: Location[]
+  }
 }
 
 export interface ExifData {

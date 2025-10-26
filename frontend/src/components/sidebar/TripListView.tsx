@@ -13,9 +13,10 @@ import { cn } from '@/lib/utils'
 interface TripListViewProps {
   onBack: () => void
   onTripClick: (trip: Trip) => void
+  trips?: Trip[]
 }
 
-export function TripListView({ onBack, onTripClick }: TripListViewProps) {
+export function TripListView({ onBack, onTripClick, trips }: TripListViewProps) {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -39,7 +40,14 @@ export function TripListView({ onBack, onTripClick }: TripListViewProps) {
       {/* Trip List - Scrollable */}
       <div className="flex-1 overflow-y-auto p-4">
         <div className="space-y-3">
-          {mockTrips.map((trip) => (
+          {(
+            // Combine mock trips with runtime-created trips (if any), dedup by id
+            (trips && trips.length > 0
+              ? [...mockTrips, ...trips].filter(
+                  (t, idx, arr) => arr.findIndex((x) => x.id === t.id) === idx
+                )
+              : mockTrips)
+          ).map((trip) => (
             <TripCard key={trip.id} trip={trip} onClick={() => onTripClick(trip)} />
           ))}
         </div>
@@ -105,7 +113,7 @@ function TripCard({ trip, onClick }: TripCardProps) {
               {formatDateRange(trip.start_date, trip.end_date)}
             </p>
           </div>
-          {trip.rating && (
+          {typeof trip.rating === 'number' && trip.rating > 0 && (
             <div className="flex items-center gap-1 bg-black/30 px-2 py-1 rounded">
               <span className="text-yellow-400">⭐</span>
               <span className="text-white font-semibold">{trip.rating.toFixed(1)}</span>

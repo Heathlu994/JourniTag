@@ -44,6 +44,28 @@ export function LocationDetailView({
   }
 
   const parsedNotes = parseNotes(location.notes)
+  const photosToShow = (photos && photos.length > 0) ? photos : (location.photos || [])
+
+  // Render fractional stars (supports halves/any fraction) by masking each star width
+  const renderFractionalStars = (value: number) => {
+    const stars = []
+    for (let i = 1; i <= 5; i++) {
+      const portion = Math.max(0, Math.min(1, value - (i - 1)))
+      const widthPercent = `${portion * 100}%`
+      stars.push(
+        <span key={i} className="relative inline-block w-5" aria-hidden>
+          <span className="text-2xl text-gray-300">★</span>
+          <span
+            className="absolute left-0 top-0 overflow-hidden"
+            style={{ width: widthPercent }}
+          >
+            <span className="text-2xl text-yellow-400">★</span>
+          </span>
+        </span>
+      )
+    }
+    return stars
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -59,9 +81,9 @@ export function LocationDetailView({
       <div className="flex-1 overflow-y-auto overflow-x-hidden">
         {/* Photo Gallery */}
         <div className="relative w-full h-64 bg-muted overflow-x-auto">
-          {photos.length > 0 ? (
+          {photosToShow.length > 0 ? (
             <div className="flex gap-1 h-full p-2 w-48">
-              {photos.map((photo) => (
+              {photosToShow.map((photo) => (
                 <img
                   key={photo.id}
                   src={photo.file_url}
@@ -116,18 +138,8 @@ export function LocationDetailView({
             {/* Ratings */}
             <div className="space-y-2">
               <Label>Ratings</Label>
-              <div className="flex gap-1">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <span
-                    key={star}
-                    className={cn(
-                      'text-2xl',
-                      star <= location.rating ? 'text-yellow-400' : 'text-gray-300'
-                    )}
-                  >
-                    ⭐
-                  </span>
-                ))}
+              <div className="flex gap-0.5">
+                {renderFractionalStars((location.rating ?? 0))}
               </div>
             </div>
 
@@ -149,17 +161,23 @@ export function LocationDetailView({
             )}
 
             {/* What you should know */}
-            {parsedNotes.length > 0 && (
+            {location.notes && location.notes.trim().length > 0 && (
               <div className="space-y-2">
                 <Label>What you should know</Label>
-                <div className="space-y-2">
-                  {parsedNotes.map(({ category, note }, index) => (
-                    <div key={index} className="text-sm">
-                      <span className="font-medium">For the {category}:</span>{' '}
-                      <span className="text-muted-foreground">"{note}"</span>
-                    </div>
-                  ))}
-                </div>
+                {parsedNotes.length > 0 ? (
+                  <div className="space-y-2">
+                    {parsedNotes.map(({ category, note }, index) => (
+                      <div key={index} className="text-sm">
+                        <span className="font-medium">For the {category}:</span>{' '}
+                        <span className="text-muted-foreground">"{note}"</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                    {location.notes}
+                  </p>
+                )}
               </div>
             )}
           </div>

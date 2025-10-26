@@ -46,6 +46,7 @@ export function usePhotos() {
 
   return {
     photos,
+    setPhotos,
     loading,
     error,
     refresh: loadPhotos,

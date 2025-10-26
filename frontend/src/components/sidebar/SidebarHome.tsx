@@ -15,9 +15,10 @@ interface SidebarHomeProps {
   onTripClick?: (trip: Trip) => void
   onUploadClick?: () => void
   onMyTripsClick?: () => void
+  trips?: Trip[]
 }
 
-export function SidebarHome({ onTripClick, onUploadClick, onMyTripsClick }: SidebarHomeProps) {
+export function SidebarHome({ onTripClick, onUploadClick, onMyTripsClick, trips }: SidebarHomeProps) {
   const formatDateRange = (start: string, end: string) => {
     const startDate = new Date(start)
     const endDate = new Date(end)
@@ -78,7 +79,7 @@ export function SidebarHome({ onTripClick, onUploadClick, onMyTripsClick }: Side
         <div className="px-4 pb-4">
           <h2 className="text-xl font-bold mb-4">Recent trips</h2>
           <div className="space-y-3">
-            {mockTrips.map((trip) => (
+            {(trips && trips.length > 0 ? [...trips].reverse() : mockTrips).map((trip) => (
               <TripCard
                 key={trip.id}
                 trip={trip}
@@ -173,7 +174,7 @@ function TripCard({ trip, onClick }: TripCardProps) {
               {formatDateRange(trip.start_date, trip.end_date)}
             </p>
           </div>
-          {trip.rating && (
+          {typeof trip.rating === 'number' && trip.rating > 0 && (
             <div className="flex items-center gap-1 bg-black/30 px-2 py-1 rounded">
               <span className="text-yellow-400">⭐</span>
               <span className="text-white font-semibold">{trip.rating.toFixed(1)}</span>

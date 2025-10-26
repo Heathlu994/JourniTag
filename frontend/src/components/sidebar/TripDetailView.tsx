@@ -14,11 +14,13 @@ interface TripDetailViewProps {
   trip: Trip
   onBack: () => void
   onLocationClick: (location: Location) => void
+  locations?: Location[]
 }
 
-export function TripDetailView({ trip, onBack, onLocationClick }: TripDetailViewProps) {
-  // Get all locations for this trip
-  const tripLocations = mockLocations.filter((loc) => loc.trip_id === trip.id)
+export function TripDetailView({ trip, onBack, onLocationClick, locations }: TripDetailViewProps) {
+  // Prefer runtime-provided locations, fallback to mock
+  const all = locations && locations.length > 0 ? locations : mockLocations
+  const tripLocations = all.filter((loc) => loc.trip_id === trip.id)
 
   const formatDateRange = (start: string, end: string) => {
     const startDate = new Date(start)
@@ -68,7 +70,7 @@ export function TripDetailView({ trip, onBack, onLocationClick }: TripDetailView
       <div className="p-4">
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>{tripLocations.length} locations</span>
-          <span>{trip.photo_count || 0} photos</span>
+          <span>{tripLocations.reduce((sum, l) => sum + (l.photos?.length || 0), 0)} photos</span>
         </div>
       </div>
 

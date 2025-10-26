@@ -21,6 +21,13 @@ import type {
 } from '@/types'
 
 // ============================================
+// In-memory store for uploaded data
+// ============================================
+const uploadedPhotosStore: { [tripId: string]: Photo[] } = {}
+const uploadedLocationsStore: { [locationId: string]: Location } = {}
+const createdTripsStore: { [tripId: string]: Trip } = {}
+
+// ============================================
 // Axios Instance Configuration
 // ============================================
 
@@ -132,9 +139,10 @@ export const tripAPI = {
    * Response: { trips: Trip[] }
    */
   getTrips: async (filters?: TripFilters): Promise<Trip[]> => {
-    // PLACEHOLDER
+    // PLACEHOLDER - return mock data for now
     console.log('tripAPI.getTrips called with filters:', filters)
-    return Promise.resolve([])
+    const { mockTrips } = await import('@/lib/mockData')
+    return Promise.resolve(mockTrips)
   },
 
   /**
@@ -143,13 +151,79 @@ export const tripAPI = {
    * Response: { trip: Trip, locations: Location[], photos: Photo[] }
    */
   getTripById: async (tripId: string): Promise<{ trip: Trip; locations: Location[]; photos: Photo[] }> => {
-    // PLACEHOLDER
+    // PLACEHOLDER - return mock data for now
     console.log('tripAPI.getTripById called with:', tripId)
-    return Promise.resolve({
-      trip: {} as Trip,
-      locations: [],
-      photos: [],
-    })
+    await new Promise(resolve => setTimeout(resolve, 500))
+
+    // Get the uploaded photos from the store
+    const storedPhotos = uploadedPhotosStore[tripId] || []
+    console.log('Retrieved stored photos for trip:', tripId, storedPhotos)
+
+    // Get the created trip from the store
+    const storedTrip = createdTripsStore[tripId]
+    console.log('Retrieved stored trip for tripId:', tripId, storedTrip)
+
+    // Use stored trip if available, otherwise return mock data
+    const tripToReturn = storedTrip || {
+      id: tripId,
+      user_id: '1',
+      title: 'New Trip',
+      city: 'Tokyo',
+      country: 'Japan',
+      start_date: new Date().toISOString().split('T')[0],
+      end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 days later
+      created_at: new Date().toISOString(),
+      rating: 0,
+    }
+
+    // Create mock photos for this location using realistic coordinates
+    // These will be replaced with actual photo coordinates from the upload
+    const tripMockPhotos: Photo[] = [
+      {
+        id: `photo-${tripId}-1`,
+        location_id: `location-${tripId}`,
+        user_id: '1',
+        x: 139.6503, // longitude - will be updated with actual photo coordinates
+        y: 35.6762,  // latitude - will be updated with actual photo coordinates
+        file_url: '/src/assets/test-photos/pic-1.png',
+        original_filename: 'uploaded-photo-1.jpg',
+        taken_at: new Date().toISOString(),
+        is_cover_photo: true,
+      },
+      {
+        id: `photo-${tripId}-2`,
+        location_id: `location-${tripId}`,
+        user_id: '1',
+        x: 139.6503, // longitude - will be updated with actual photo coordinates
+        y: 35.6762,  // latitude - will be updated with actual photo coordinates
+        file_url: '/src/assets/test-photos/pic-2.png',
+        original_filename: 'uploaded-photo-2.jpg',
+        taken_at: new Date().toISOString(),
+        is_cover_photo: false,
+      }
+    ]
+
+    // Create a mock location for this trip
+    const mockLocation: Location = {
+      id: `location-${tripId}`,
+      trip_id: tripId,
+      name: 'New Location',
+      address: 'New Address',
+      latitude: 35.6762, // Tokyo coordinates
+      longitude: 139.6503,
+      rating: 0,
+      image: '',
+      created_at: new Date().toISOString(),
+      photos: tripMockPhotos, // Add photos to the location
+    }
+
+    const result = {
+      trip: tripToReturn,
+      locations: [mockLocation],
+      photos: storedPhotos.length > 0 ? storedPhotos : tripMockPhotos, // Use stored photos if available
+    }
+    console.log('tripAPI.getTripById returning:', result)
+    return Promise.resolve(result)
   },
 
   /**
@@ -159,14 +233,23 @@ export const tripAPI = {
    * Response: { trip: Trip }
    */
   createTrip: async (data: CreateTripRequest): Promise<Trip> => {
-    // PLACEHOLDER
+    // PLACEHOLDER - simulate API delay
     console.log('tripAPI.createTrip called with:', data)
-    return Promise.resolve({
+    await new Promise(resolve => setTimeout(resolve, 1000))
+
+    const newTrip: Trip = {
       id: Date.now().toString(),
       user_id: '1',
       ...data,
       created_at: new Date().toISOString(),
-    })
+      rating: 0,
+    }
+
+    // Store the created trip
+    createdTripsStore[newTrip.id] = newTrip
+    console.log('Stored trip in createdTripsStore:', newTrip)
+
+    return Promise.resolve(newTrip)
   },
 
   /**
@@ -215,12 +298,65 @@ export const locationAPI = {
    * Response: { location: Location, photos: Photo[] }
    */
   getLocationById: async (locationId: string): Promise<{ location: Location; photos: Photo[] }> => {
-    // PLACEHOLDER
+    // PLACEHOLDER - return mock data for now
     console.log('locationAPI.getLocationById called with:', locationId)
-    return Promise.resolve({
-      location: {} as Location,
-      photos: [],
-    })
+    await new Promise(resolve => setTimeout(resolve, 500))
+
+    // Get the uploaded photos from the store (keyed by location id)
+    const storedPhotos = uploadedPhotosStore[locationId] || []
+    console.log('Retrieved stored photos for location:', locationId, storedPhotos)
+
+    // Get the created location from the store
+    const storedLocation = uploadedLocationsStore[locationId]
+    console.log('Retrieved stored location for locationId:', locationId, storedLocation)
+
+    // Create mock photos for this location
+    const locationPhotos: Photo[] = [
+      {
+        id: `photo-${locationId}-1`,
+        location_id: locationId,
+        user_id: '1',
+        x: 139.6503, // longitude
+        y: 35.6762,  // latitude
+        file_url: '/src/assets/test-photos/pic-1.png',
+        original_filename: 'uploaded-photo-1.jpg',
+        taken_at: new Date().toISOString(),
+        is_cover_photo: true,
+      },
+      {
+        id: `photo-${locationId}-2`,
+        location_id: locationId,
+        user_id: '1',
+        x: 139.6503, // longitude
+        y: 35.6762,  // latitude
+        file_url: '/src/assets/test-photos/pic-2.png',
+        original_filename: 'uploaded-photo-2.jpg',
+        taken_at: new Date().toISOString(),
+        is_cover_photo: false,
+      }
+    ]
+
+    // For newly created locations, we'll return a mock location with photos
+    // Use realistic coordinates (Tokyo area)
+    const mockLocation: Location = {
+      id: locationId,
+      trip_id: '1',
+      name: 'New Location',
+      address: 'New Address',
+      latitude: 35.6762, // Tokyo coordinates
+      longitude: 139.6503,
+      rating: 0,
+      image: '',
+      created_at: new Date().toISOString(),
+      photos: locationPhotos, // Add photos to the location
+    }
+
+    const result = {
+      location: storedLocation || mockLocation, // Use stored location if available
+      photos: storedPhotos.length > 0 ? storedPhotos : locationPhotos, // Use stored photos if available
+    }
+    console.log('locationAPI.getLocationById returning:', result)
+    return Promise.resolve(result)
   },
 
   /**
@@ -230,14 +366,23 @@ export const locationAPI = {
    * Response: { location: Location }
    */
   createLocation: async (data: CreateLocationRequest): Promise<Location> => {
-    // PLACEHOLDER
+    // PLACEHOLDER - simulate API delay
     console.log('locationAPI.createLocation called with:', data)
-    return Promise.resolve({
+    await new Promise(resolve => setTimeout(resolve, 1000))
+
+    const newLocation: Location = {
       id: Date.now().toString(),
       ...data,
       notes: data.notes || '',
       created_at: new Date().toISOString(),
-    })
+      photos: [],
+    }
+
+    // Store the created location
+    uploadedLocationsStore[newLocation.id] = newLocation
+    console.log('Stored location in uploadedLocationsStore:', newLocation)
+
+    return Promise.resolve(newLocation)
   },
 
   /**
@@ -247,9 +392,18 @@ export const locationAPI = {
    * Response: { location: Location }
    */
   updateLocation: async (data: UpdateLocationRequest): Promise<Location> => {
-    // PLACEHOLDER
     console.log('locationAPI.updateLocation called with:', data)
-    return Promise.resolve({} as Location)
+    // Update in-memory location store
+    const existing = uploadedLocationsStore[data.id]
+    const updated: Location = {
+      ...(existing || ({} as Location)),
+      ...data,
+      id: data.id,
+      photos: existing?.photos || [],
+      created_at: existing?.created_at || new Date().toISOString(),
+    }
+    uploadedLocationsStore[data.id] = updated
+    return Promise.resolve(updated)
   },
 
   /**
@@ -305,8 +459,9 @@ export const photoAPI = {
    * - is_cover_photo: boolean
    */
   uploadPhotos: async (data: UploadPhotoRequest[]): Promise<Photo[]> => {
-    // PLACEHOLDER
+    // PLACEHOLDER - simulate API delay and return mock photos
     console.log('photoAPI.uploadPhotos called with:', data)
+    await new Promise(resolve => setTimeout(resolve, 2000))
 
     // Backend: Build FormData like this:
     // const formData = new FormData()
@@ -323,7 +478,26 @@ export const photoAPI = {
     //   headers: { 'Content-Type': 'multipart/form-data' }
     // })
 
-    return Promise.resolve([])
+    // Return mock photos with actual coordinates from EXIF data
+    const mockPhotos = data.map((item, index) => ({
+      id: `uploaded-${Date.now()}-${index}`,
+      location_id: item.location_id || '',
+      user_id: '1',
+      x: item.x || 0, // Use actual longitude from EXIF
+      y: item.y || 0, // Use actual latitude from EXIF
+      file_url: URL.createObjectURL(item.file),
+      original_filename: item.file.name,
+      taken_at: new Date().toISOString(),
+      is_cover_photo: item.is_cover_photo || false,
+    }))
+
+    console.log('photoAPI.uploadPhotos returning photos with coordinates:', mockPhotos.map(p => ({ id: p.id, x: p.x, y: p.y })))
+
+    // Store by locationId so detail views can retrieve immediately
+    const locationIdKey = data[0]?.location_id || 'unknown'
+    uploadedPhotosStore[locationIdKey] = mockPhotos
+
+    return Promise.resolve(mockPhotos)
   },
 
   /**

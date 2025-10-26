@@ -36,13 +36,13 @@ export function TagPill({ tag, selected = false, onToggle, removable = false, va
 }
 
 interface TagSelectorProps {
-  availableTags: string[]
-  selectedTags: string[]
+  availableTags?: string[]
+  selectedTags?: string[]
   onTagToggle: (tag: string) => void
   maxTags?: number
 }
 
-export function TagSelector({ availableTags, selectedTags, onTagToggle, maxTags }: TagSelectorProps) {
+export function TagSelector({ availableTags = [], selectedTags = [], onTagToggle, maxTags }: TagSelectorProps) {
   const canAddMore = !maxTags || selectedTags.length < maxTags
 
   const handleToggle = (tag: string) => {
