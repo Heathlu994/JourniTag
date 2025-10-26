@@ -122,7 +122,11 @@ export function LocationDetailEdit({
             <div className="space-y-2">
               <Label>Vibe</Label>
               <TagSelector
-                availableTags={Array.from(TAG_OPTIONS)}
+                availableTags={[
+                  ...Array.from(TAG_OPTIONS),
+                  // Ensure custom tags (added by user) also appear and can be toggled
+                  ...((editedLocation.tags || []).filter((t) => !Array.from(TAG_OPTIONS).includes(t)))
+                ]}
                 selectedTags={editedLocation.tags}
                 onTagToggle={(tag) => {
                   const current = editedLocation.tags || []

@@ -18,8 +18,13 @@ interface TripDetailViewProps {
 }
 
 export function TripDetailView({ trip, onBack, onLocationClick, locations }: TripDetailViewProps) {
-  // Prefer runtime-provided locations, fallback to mock
-  const all = locations && locations.length > 0 ? locations : mockLocations
+  // Merge runtime locations with mocks so adding a new location doesn't hide existing ones
+  const runtime = locations ?? []
+  const mergedById: Record<string, Location> = {}
+  for (const loc of [...mockLocations, ...runtime]) {
+    mergedById[loc.id] = { ...(mergedById[loc.id] || {} as Location), ...loc }
+  }
+  const all = Object.values(mergedById)
   const tripLocations = all.filter((loc) => loc.trip_id === trip.id)
 
   const formatDateRange = (start: string, end: string) => {
@@ -36,6 +41,13 @@ export function TripDetailView({ trip, onBack, onLocationClick, locations }: Tri
     }
     return `${startMonth} ${startDay} - ${endMonth} ${endDay}, ${startDate.getFullYear()}`
   }
+
+  // Compute dynamic stats
+  const rated = tripLocations.filter((l) => (l.rating ?? 0) > 0)
+  const averageRating = rated.length > 0
+    ? rated.reduce((s, l) => s + (l.rating ?? 0), 0) / rated.length
+    : 0
+  const totalPhotos = tripLocations.reduce((sum, l) => sum + (l.photos?.length || 0), 0)
 
   return (
     <div className="flex flex-col h-full">
@@ -59,10 +71,10 @@ export function TripDetailView({ trip, onBack, onLocationClick, locations }: Tri
         <div className="absolute inset-0 flex items-center justify-center text-white/20 text-xs">
           Trip cover photo placeholder
         </div>
-        {trip.rating && (
+        {averageRating > 0 && (
           <div className="absolute bottom-3 right-3 flex items-center gap-1 bg-black/50 px-3 py-1.5 rounded">
             <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-            <span className="text-white font-semibold">{trip.rating.toFixed(1)}</span>
+            <span className="text-white font-semibold">{averageRating.toFixed(1)}</span>
           </div>
         )}
       </div>
@@ -70,7 +82,7 @@ export function TripDetailView({ trip, onBack, onLocationClick, locations }: Tri
       <div className="p-4">
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>{tripLocations.length} locations</span>
-          <span>{tripLocations.reduce((sum, l) => sum + (l.photos?.length || 0), 0)} photos</span>
+          <span>{totalPhotos} photos</span>
         </div>
       </div>
 

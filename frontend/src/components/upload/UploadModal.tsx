@@ -196,9 +196,10 @@ export function UploadModal({ isOpen, onClose, onUploadComplete }: UploadModalPr
     if (uploadState.currentStep === 'uploading') {
       console.log('Step changed to uploading, triggering handleUpload with current state:', { newTrip, newLocation, existingTripId, existingLocationId })
       console.log('Upload state previews:', uploadState.previews)
+      console.log('Using location details:', newLocation)
       handleUpload()
     }
-  }, [uploadState.currentStep])
+  }, [uploadState.currentStep, handleUpload])
 
   const handleClose = useCallback(() => {
     setUploadState({
