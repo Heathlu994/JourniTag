@@ -87,16 +87,31 @@ function App() {
     }
   }
 
-  const handleLocationClick = (location: Location) => {
+  const handleLocationClick = async (location: Location) => {
     console.log('Location clicked:', location)
-    // Prefer runtime state location with photos
     const runtime = locations.find(l => l.id === location.id) || location
-    const withMock = runtime.photos && runtime.photos.length > 0
-      ? runtime
-      : getLocationWithPhotos(location.id) || runtime
 
-    setSelectedLocation(withMock)
-    setLocationPhotos(withMock.photos || [])
+    // If we already have photos locally, use them; otherwise try API store, then mock
+    let enriched = runtime
+    if (!runtime.photos || runtime.photos.length === 0) {
+      try {
+        const fetched = await locationAPI.getLocationById(location.id)
+        enriched = { ...fetched.location, photos: fetched.photos }
+
+        // merge back into locations state so Trip views show counts
+        setLocations(prev => {
+          const byId: Record<string, Location> = {}
+          for (const l of [...prev, enriched]) byId[l.id] = { ...(byId[l.id] || {} as Location), ...l }
+          return Object.values(byId)
+        })
+      } catch (e) {
+        const fallback = getLocationWithPhotos(location.id)
+        if (fallback) enriched = fallback
+      }
+    }
+
+    setSelectedLocation(enriched)
+    setLocationPhotos(enriched.photos || [])
     setSidebarView('location-detail')
     setIsEditing(false)
   }
@@ -151,8 +166,14 @@ function App() {
 
     if (newLocations && newLocations.length > 0) {
       console.log('Adding locations to state and map:', newLocations)
-      // store locations for TripDetail view
-      setLocations(prev => [...prev, ...newLocations])
+      // merge locations (preserve existing ones under the trip)
+      setLocations(prev => {
+        const byId: Record<string, Location> = {}
+        for (const l of [...prev, ...newLocations]) {
+          byId[l.id] = { ...(byId[l.id] || {} as Location), ...l }
+        }
+        return Object.values(byId)
+      })
 
       // add their photos to the map
       setPhotos(prevPhotos => {
@@ -166,12 +187,18 @@ function App() {
         return [...prevPhotos, ...newPhotos]
       })
 
-      // compute trip stats
+      // compute trip stats across ALL locations for that trip
       if (trip) {
-        const rated = newLocations.filter(l => (l.rating ?? 0) > 0)
-        const avg = rated.length > 0 ? rated.reduce((s, l) => s + (l.rating ?? 0), 0) / rated.length : 0
-        const photosCount = newLocations.reduce((s, l) => s + (l.photos?.length || 0), 0)
-        setTrips(prev => prev.map(t => t.id === trip.id ? { ...t, rating: avg || undefined, photo_count: photosCount } : t))
+        setTrips(prev => {
+          const allForTrip = (locations.filter(l => l.trip_id === trip.id)).concat(newLocations)
+          const dedupById: Record<string, Location> = {}
+          for (const l of allForTrip) dedupById[l.id] = l
+          const merged = Object.values(dedupById)
+          const rated = merged.filter(l => (l.rating ?? 0) > 0)
+          const avg = rated.length > 0 ? rated.reduce((s, l) => s + (l.rating ?? 0), 0) / rated.length : 0
+          const photosCount = merged.reduce((s, l) => s + (l.photos?.length || 0), 0)
+          return prev.map(t => t.id === trip.id ? { ...t, rating: avg || undefined, photo_count: photosCount } : t)
+        })
       }
 
       // Navigate author to edit the first created location
