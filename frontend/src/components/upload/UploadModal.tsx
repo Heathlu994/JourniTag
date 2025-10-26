@@ -214,6 +214,17 @@ export function UploadModal({ isOpen, onClose, onUploadComplete }: UploadModalPr
     onClose()
   }, [onClose])
 
+  // Ensure a fresh start every time the modal is opened
+  useEffect(() => {
+    if (isOpen) {
+      setUploadState({ files: [], previews: [], currentStep: 'select' })
+      setNewTrip(null)
+      setNewLocation(null)
+      setExistingTripId(null)
+      setExistingLocationId(null)
+    }
+  }, [isOpen])
+
   const renderCurrentStep = () => {
     switch (uploadState.currentStep) {
       case 'select':

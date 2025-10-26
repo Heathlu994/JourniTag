@@ -231,7 +231,7 @@ export function DetailsStep({
                 </Select>
               </div>
               <div>
-                <Label htmlFor="time-needed">Time Needed (minutes)</Label>
+                <Label htmlFor="time-needed">Time to Spend (minutes)</Label>
                 <Input
                   id="time-needed"
                   type="number"

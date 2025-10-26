@@ -9,7 +9,6 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { Label } from '@/components/ui/label'
 import type { Location, Photo } from '@/types'
-import { cn } from '@/lib/utils'
 
 interface LocationDetailViewProps {
   location: Location
@@ -216,12 +215,12 @@ export function LocationDetailView({
               </div>
             )}
 
-            {/* Hours to spend */}
+            {/* Time to Spend */}
             {location.time_needed && (
               <div className="space-y-2">
-                <Label>Hours to spend</Label>
+                <Label>Time to Spend</Label>
                 <p className="text-sm text-muted-foreground">
-                  {location.time_needed / 60} hours
+                  {location.time_needed} minutes
                 </p>
               </div>
             )}

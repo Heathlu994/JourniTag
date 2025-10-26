@@ -167,7 +167,7 @@ function LocationCard({ location, onClick }: LocationCardProps) {
             {location.time_needed && (
               <div className="flex items-center gap-1">
                 <Clock className="w-3 h-3" />
-                <span>{location.time_needed / 60}h</span>
+                <span>{location.time_needed}m</span>
               </div>
             )}
             <div className="flex items-center gap-1">
